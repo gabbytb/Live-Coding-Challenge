@@ -14,9 +14,12 @@ const PostsList = () => {
     const [posts, setPosts] = useState([]);
 
 
-    useEffect(() => {
+    useEffect(() => {       
+        document.title = "Blog | Gabby";        
         axios.get("http://127.0.0.1:8000/v1/api/admin/posts/manage")
-        .then(response => setPosts(response.data))
+        .then(response => {
+            setPosts(response.data);
+        })
         .catch(err => console.log("Error caught while fetching all Blog Posts! Visit BlogList.js Component: ", err));
     }, []);
 
@@ -35,12 +38,12 @@ const PostsList = () => {
                                     </CardImgOverlay> */}
                                     <CardHeader>
                                         <CardTitle> 
-                                            <Link to={`/blog/${post._id}`} alt="post-title-link">{post.title}</Link>
+                                            <Link to={`/blog/post/${post._id}`} alt="post-title-link">{post.title}</Link>
                                         </CardTitle>
                                     </CardHeader>
                                     <CardBody>
                                         <CardText>{post.description}</CardText>
-                                        <CardLink to={`/blog/${post._id}`} alt="post-link">Read more</CardLink>
+                                        <CardLink to={`/blog/post/${post._id}`} alt="post-link">Read more</CardLink>
                                     </CardBody>
                                     <CardFooter>
                                         <CardText>{post.by_author}</CardText>

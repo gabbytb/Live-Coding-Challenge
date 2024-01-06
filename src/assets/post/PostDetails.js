@@ -16,8 +16,10 @@ const PostDetails = () => {
 
     useEffect(() => {
         const fetchPost = async () => {
+            const id = post_id;
+            
             try {
-                const response = await axios.get(`http://127.0.0.1:8000/v1/api/admin/posts/manage/:${post_id}`);
+                const response = await axios.get(`http://127.0.0.1:8000/v1/api/admin/posts/manage/:${id}`);
                 setPost(response.data);
             } catch (error) {
                 console.error('Error fetching post:', error);

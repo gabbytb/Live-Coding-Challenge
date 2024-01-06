@@ -31,7 +31,7 @@ function Accountusers() {
     
 
     useEffect(() => {
-        axios.get("http://127.0.0.1:8000/v1/api/admin/users/manage")
+        axios.get("http://127.0.0.1:8000/api/v1/admin/users/manage")
         .then((response) => { 
             setUsers(response.data);
             console.log(response.status, response.data);
@@ -39,6 +39,24 @@ function Accountusers() {
         .catch((err) => {
             console.log(err);
         });
+
+
+        // axios.get("http://127.0.0.1:8000/v1/api/admin/posts/manage")
+        // .then(response => {
+        //     const { success, data, message } = response.data;
+        //     if (success) {
+        //         setPosts(data);
+        //         console.log("Success: ", success);
+        //         console.log("Data: ", data);
+        //         console.log("Message", message);
+        //         return;
+        //     } else {
+        //         console.log("Message: ", message);
+        //     }
+        // })
+        // .catch((err) => {
+        //     console.log(err);
+        // });
     }, []);
     
 
@@ -73,13 +91,13 @@ function Accountusers() {
                                     <tr key={user._id}>
                                         <th scope="row">{user._id}</th>
                                         <td>{user.username}</td>
-                                        <td>{user.first_name}</td>
-                                        <td>{user.last_name}</td>
+                                        <td>{user.firstName}</td>
+                                        <td>{user.lastName}</td>
                                         <td>{user.email}</td>
                                         <td>{user.password}</td>
-                                        <td>{user.isActive}</td>
-                                        <td>{user.role}</td>
-                                        <td>{user.permission}</td>
+                                        <td>{user.isActive === true ? "true" : "false"}</td>
+                                        {/* <td>{user.role}</td>
+                                        <td>{user.permission}</td> */}
                                         <td>{user.createdAt}</td>
                                         <td>{user.updatedAt}</td>
                                         <td>{user.token}</td>

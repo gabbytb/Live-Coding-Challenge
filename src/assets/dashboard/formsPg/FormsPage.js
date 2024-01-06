@@ -8,7 +8,6 @@ import DatePicker from 'react-datepicker';
 
 
 const FormsPage = () => {
-
     
     const [startDate, setStartDate] = useState(new Date());
     

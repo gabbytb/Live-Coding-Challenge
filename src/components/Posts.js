@@ -1,5 +1,5 @@
 import React from "react";
-import PostsList from "../assets/blog/PostsList";
+import PostsList from "../assets/post/PostsList";
 import Header from "../Header";
 
 

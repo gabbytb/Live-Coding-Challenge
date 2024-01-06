@@ -1,12 +1,12 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import reportWebVitals from './reportWebVitals';
+import './index.css';
 // Bootstrap CSS
 import "bootstrap/dist/css/bootstrap.min.css";
 // Bootstrap Bundle JS
 import "bootstrap/dist/js/bootstrap.bundle.min.js";
-import './index.css';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import reportWebVitals from './reportWebVitals';
 import App from "./App";
 import Posts from "./components/Posts";
 import SinglePost from "./components/SinglePost";
@@ -31,7 +31,7 @@ root.render(
       <Routes>
         <Route path="/" element={<App />}></Route>
         <Route path="/blog" element={<Posts />}></Route>
-        <Route path="/blog/post/:id" component={<SinglePost />}></Route>
+        <Route path="/blog/post/:_id" component={<SinglePost />}></Route>
         <Route path="/user/signup" element={<Registration />}></Route>
         <Route path="/user/login" element={<LoginUser />}></Route>     
         <Route path="/admin/dashboard" element={<Dashboard />}></Route>

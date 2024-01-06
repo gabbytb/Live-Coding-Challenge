@@ -12,34 +12,44 @@ const jwt = require("jsonwebtoken");
 
 // Create New User
 exports.create = async (req, res) => {
-   
-    const {id=Math.floor(256*Math.random()), username, firstName, lastName, email, password, isActive} = req.body;
+
+    // Fields for Payload
+    const {id, username, firstName, lastName, email, password, isActive="true"?true:false} = req.body;
+    const idExists = await User.findOne({ id: id });
     const emailExists = await User.findOne({ email: email.toLowerCase() });
-    const usernameExists = await User.findOne({ username: username.toLowerCase() });   
+    const usernameExists = await User.findOne({ username: username.toLowerCase() });
 
     try {
-
-        // FORM VALIDATION:  If any of these fields, is missing in the payload, display 'errMsg' !!!!
-        if (!(username && firstName && lastName && email && password && isActive)) {
-            const errMsg = res.status(200).send('Fill all the required inputs.');
-            console.log("Fill all the required inputs: ", errMsg);
-            return;
+        
+        // FORM VALIDATION:  "Required Fields for Payload."
+        if (!( id && username && firstName && lastName && email && password)) {
+            const responseData = { success: false, data: null, message: 'Fill all the required inputs.' };
+            return res.status(200).send(responseData);
         } else if (emailExists) {
-            const emailExistsMsg = res.status(200).send('User with email exists. Please sign-in.');
-            console.log("Email exists: ", emailExistsMsg);
-            return;
+            const responseData = { success: false, data: null, message: 'User with email exists. Please sign-in.' };
+            return res.status(200).send(responseData);
         } else if (usernameExists) {
-            const usernameExistsMsg = res.status(200).send('User with username exists. Please sign-in.');
-            console.log("Username exists: ", usernameExistsMsg);
-            return;
+            const responseData = { success: false, data: null, message: 'User with username exists. Please sign-in.' };
+            return res.status(200).send(responseData);
         } else {
+            if (idExists) {
+                function setNewId() {
+                    let user_id = Math.floor(2001*Math.random()) + Math.floor(2003*Math.random()) + Math.floor(2005*Math.random());
+                    console.log(`Generated User ID: ${user_id}`);
+                    return user_id;
+                };
+                
+                const newUser_Id = setNewId();
+                id = id === newUser_Id;
+                return;
+            };
             const encryptedPassword = await bcrypt.hashSync(password, bcrypt.genSaltSync());
             const user = new User ({
-                id,
-                username: username.toLowerCase(),
+                _id: id,
+                username: username.toLowerCase(),    // sanitize: convert username to lowercase
                 firstName,
                 lastName,
-                email: email.toLowerCase(),    // sanitize: convert email to lowercase
+                email: email.toLowerCase(),    // sanitize: convert email to lowercase NOTE: You must sanitize your data before forwarding to backend.
                 password: encryptedPassword,
                 isActive,
             });          
@@ -54,7 +64,7 @@ exports.create = async (req, res) => {
 
             // NOTE: JSON Web Token(JWT) is using the sign method from the jsonwebtoken library.
             // 1) The first argument is an object containing the payload of the token, which includes the user_Id (assuming it is the user's ID) and the email.
-            // 2) The second argument is the secret key (tokenKey) used to sign the token, ensuring its authenticity.
+            // 2) The second argument is the secret key (i.e tokenKey) used to sign the token, ensuring its authenticity.
             // 3) The third argument is an options object, specifying that the token should expire after 24 hours.
 
             // IN SUMMARY:
@@ -62,7 +72,7 @@ exports.create = async (req, res) => {
             // >> Sign it with a secret key (tokenKey), 
             // >> And set an expiration time of 24 hours ({ expiresIn: "24h" }). 
             // ...The "token" variable will then contain the generated JWT, which can be used for authentication and authorization purposes in your application
-            const token = jwt.sign({user_Id: user.id, email}, tokenKey, { expiresIn: "24h" });
+            const token = jwt.sign({user_Id: user._id, email}, tokenKey, { expiresIn: "24h" });
 
 
             // Assign Generated Token to User
@@ -74,12 +84,14 @@ exports.create = async (req, res) => {
                          \n********************************************************* 
                          \n ${user}
                          \n*********************************************************`);
-            
-            return res.status(201).json(user);          
+
+            const responseData = { success: true, data: user, message: 'SUCCESSFUL: NEW USER ACCOUNT CREATED !!!' };
+            return res.status(201).json(responseData);
         }
-    } catch (err) {      
-        const errMsg = res.status(500).json(`Internal Server Error: ${err}`);
-        console.log("Error saving user: ", errMsg);
+
+    } catch (error) {      
+        const errMsg = res.status(500).json(error);
+        console.log("Internal Server Error: ", errMsg);
         return;
     }
 };
@@ -94,13 +106,13 @@ exports.create = async (req, res) => {
 exports.logIn = async (req, res) => {
 
     // res.setHeader('Content-Type', 'application/json');
-    
-    try {
-        const { email, password } = req.body;
+    const { email, password } = req.body;
   
-        // Find the user by email
-        const user = await User.findOne({ email });
-                
+    // Find the user by email
+    const user = await User.findOne({ email });
+              
+    try {
+
         // Check if the user exists and the password is correct
         if (user && await bcrypt.compare(password, user.password)) {
             
@@ -108,20 +120,21 @@ exports.logIn = async (req, res) => {
             const tokenKey = process.env.TOKEN_KEY || "iMustWarnYou,DoNotPlayWithMe!-Gabby";
 
             // Assign Generated Token to Existing User Account
-            const token = jwt.sign({ user_Id: user.id, email}, tokenKey, { expiresIn: "24h" });            
+            const token = jwt.sign({ user_Id: user._id, email}, tokenKey, { expiresIn: "24h" });            
             
             // Send the token and user information in the response
             res.status(200).json({ user, token });
 
-            console.log("\n", "***** USER THAT IS LOGGED-IN *****", '\n', "User ID: ", user.id, '\n', "USERNAME: ", user.username, '\n', "FULL NAME: ", user.firstName + " " + user.lastName, "\n", "USER EMAIL: ", user.email, "\n", "USER's TOKEN: ", user.token, "\n", "\n", "TOKEN GENERATED FOR USER: ", token);
+            console.log("\n", "***** USER THAT IS LOGGED-IN *****", '\n', "User ID: ", user._id, '\n', "USERNAME: ", user.username, '\n', "FULL NAME: ", user.firstName + " " + user.lastName, "\n", "USER EMAIL: ", user.email, "\n", "USER's TOKEN: ", user.token, "\n", "\n", "TOKEN GENERATED FOR USER: ", token);
             // console.log("\n", "***** USER THAT IS LOGGED-IN *****", '\n', "USERNAME: ", user.username, '\n', "FULL NAME: ", user.first_name + " " + user.last_name, "\n", "USER EMAIL: ", user.email,"\n", "USER TOKEN: ", user.token, "\n\n", "TOKEN GENERATED FOR USER: ", token);
             // console.log("TOKEN GENERATED: ", token);
 
         } else {
+            
             // Authentication failed
             const errMsg = res.status(401).send('No match found');
             console.log("\n*********************************************************************************");
-            console.log("This User has enter'd incorrect Log-in details: ", errMsg);
+            console.log("No match found::: This User has enter'd incorrect Log-in details: ", errMsg);
             
         }
     } catch (error) {
@@ -161,7 +174,7 @@ exports.findUserById = async (req, res) => {
     try{
         //  The response body(i.e userId) will contain the user document.
         //  NOTE:  This is a query operation:- User.findById();
-        const userId = User.findById(id)
+        const userId = await User.findById(id)
         if (userId) {
             return res.status(200).json(userId);
         } else {

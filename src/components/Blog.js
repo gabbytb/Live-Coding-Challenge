@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import BlogList from "../assets/blog/BlogList";
 import Header from "../Header";
 
@@ -8,6 +8,12 @@ import Header from "../Header";
 
 
 const Blog = () => {
+
+    
+    useEffect(() => {
+        document.title = "Blog News | Gabby";
+    }, []);
+
 
     return (
         <>

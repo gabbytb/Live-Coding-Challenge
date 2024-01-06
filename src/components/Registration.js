@@ -8,10 +8,12 @@ import axios from 'axios';
 
 
 
+const ranNum = Math.floor(23401*Math.random()) + Math.floor(2020*Math.random()) + Math.floor(247*Math.random());
 
 function Registration() {
-    
+
     const [user, setUser] = useState({
+        id: ranNum,
         username: '', 
         firstName: '', 
         lastName: '', 
@@ -19,15 +21,13 @@ function Registration() {
         password: '', 
         isActive: false,
     });
-    const [inputValidation, setInputValidation] = useState(null);
-    const [emailExistsMsg, setEmailExistsMsg] = useState(null);
-    const [usernameExistsMsg, setUsernameExistsMsg] = useState(null);
+    const [errorMessage, setErrorMessage] = useState(null);
     const [isSubmitting, setIsSubmitting] = useState(false); 
 
 
     
     useEffect(() => {
-        document.title = "Sign Up | Samuel Akinola Foundation";        
+        document.title = "Sign-up | Gabby";        
     }, []);
 
 
@@ -40,15 +40,14 @@ function Registration() {
         const name = e.target.name;
         const value = e.target.type === "checkbox" ? e.target.checked : e.target.value;
         setUser({
-          ...user,
-          [name]: value
+          ...user, [name]: value
         });
     }      
     
     function handleOnKeyUp(e) {
         console.clear();
         console.log(`*****  COLLECTING USER DETAILS  *****
-                    \nId: ${user.id} 
+                    \nID: ${user.id} 
                     \nUsername: ${user.username} 
                     \nFull Name: ${user.firstName} ${user.lastName} 
                     \nEmail: ${user.email} 
@@ -56,38 +55,54 @@ function Registration() {
                     \nisActive: ${user.isActive}`);
     }
 
+
+
     function handleSubmit(e) {
         e.preventDefault();
 
-        axios.post("http://127.0.0.1:8000/api/v1/admin/users/manage/create", user)
-        .then((response) => {
-            if (response.data === "Fill all the required inputs.") {
+        axios.post("http://127.0.0.1:8000/api/v1/admin/users/manage/creat", user)
+        .then(response => {
+            const { success, data, message } = response.data;
+            if (!success && message === "Fill all the required inputs.") {
                 setIsSubmitting(false);
-                setInputValidation("Fill all the required inputs");              
-                return;
-            } else if (response.data === "User with email exists. Please sign-in.") {
+                setErrorMessage(message);
+                console.log("Message: ", message);
+                return;                    
+            } else if (!success && message === "User with email exists. Please sign-in.") {
                 setIsSubmitting(false);
-                setEmailExistsMsg(`Email: ${user.email.toLowerCase()} exists. Please log-in`);
-                return;
-            } else if (response.data === "User with username exists. Please sign-in.") {
+                setErrorMessage(`E-mail ${user.email.toLowerCase()} exists. Please log-in`);
+                console.log("Message: ", message);
+                return;                    
+            } else if (!success && message === "User with username exists. Please sign-in.") {
                 setIsSubmitting(false);
-                setUsernameExistsMsg(`Username: ${user.username.toLowerCase()} exists. Please log-in`);
-                return;
+                setErrorMessage(`Username ${user.username.toLowerCase()} exists. Please log-in`);
+                console.log("Message: ", message);
+                return;   
             } else {
                 setIsSubmitting(true);
-                // setTimeout(() => {
-                //     window.location.href = "http://127.0.0.1:3000/user/login";
-                // }, 2500);
+
+                // Optional(s)...
+                console.log("Success: ", success,
+                            "\nData: ", data,
+                            "\nMessage: ", message);
+
+                // const redirToAdminIfPossible = "/admin/dashboard";          // Try going to Dashboard after Sign-up
+                // window.location.replace(redirToAdminIfPossible);
                 return;
-            };
+            }
+
         })
-        .catch((err) => {
-            console.log("Error occurred while creating new user: ", err);
+        .catch((error) => {
+            console.log("*** ERROR: Error Occurred While Creating New User (Possible Error: Axios) ***");
+            console.log("Error with API: ", error.name);
+            console.log("API Error Message: ", error.message);
+            console.log("API Error Response: ", error.code);
         });
     }
 
 
     
+
     return (
         <div className="Registration">
             <Header />
@@ -97,33 +112,28 @@ function Registration() {
                 <div className='d-flex container justify-content-center'>
                     <div className='row flex-column mx-auto' style={{width:360}}>
 
-                        <div className={`alert valhalla ${inputValidation ? 'alert-shown' : 'alert-hidden'}`}>
-                            <h2 className='alert alert-danger'>{inputValidation}</h2>
-                        </div> 
-                        <div className={`alert winter ${emailExistsMsg ? 'alert-shown' : 'alert-hidden'}`}>
-                            <h2 className='alert alert-danger'>{emailExistsMsg}</h2>
-                        </div>
-                        <div className={`alert thrones ${usernameExistsMsg ? 'alert-shown' : 'alert-hidden'}`}>
-                            <h2 className='alert alert-danger'>{usernameExistsMsg}</h2>
+                        <div className={`alert thrones ${errorMessage ? 'alert-shown' : 'alert-hidden'}`}>
+                            <h2 className='alert alert-danger'>{errorMessage}</h2>
                         </div>                    
-
-
+                    
 
                         <form className="" onSubmit={handleSubmit}>
 
+                            <input type="hidden" name="id" required />
+
                             <label htmlFor="username">Username
-                                <input type="text" className="form-control" name="username" value={user.username} placeholder="Username" onChange={handleChange} onKeyUp={handleOnKeyUp} />
+                                <input type="text" className="form-control" name="username" placeholder="Username" onChange={handleChange} onKeyUp={handleOnKeyUp} />
                             </label>
 
                             <div className="form-row d-flex justify-content-between">
                                 <div className="col">
                                     <label htmlFor="firstName">First Name
-                                        <input type="text" className="form-control" name="firstName" value={user.firstName} placeholder="First Name"  onChange={handleChange} onKeyUp={handleOnKeyUp} required />
+                                        <input type="text" className="form-control" name="firstName" placeholder="First Name"  onChange={handleChange} onKeyUp={handleOnKeyUp} />
                                     </label>
                                 </div>
                                 <div className="col">
                                     <label htmlFor="lastName">Last Name
-                                        <input type="text" className="form-control" name="lastName" value={user.lastName} placeholder="Last Name" onChange={handleChange} onKeyUp={handleOnKeyUp} required />
+                                        <input type="text" className="form-control" name="lastName" placeholder="Last Name" onChange={handleChange} onKeyUp={handleOnKeyUp} />
                                     </label>
                                 </div>
                             </div>
@@ -139,16 +149,16 @@ function Registration() {
                             </label> */}
 
                             <label htmlFor="email">Email
-                                <input type="email" className="form-control" name="email" value={user.email} placeholder="Enter e-mail" onChange={handleChange} onKeyUp={handleOnKeyUp} />
+                                <input type="email" className="form-control" name="email" placeholder="Enter e-mail" onChange={handleChange} onKeyUp={handleOnKeyUp} />
                             </label>
                         
                             <label htmlFor="password">Password
-                                <input type="password" className="form-control" name="password" value={user.password} placeholder="Enter password" onChange={handleChange} onKeyUp={handleOnKeyUp}/>        
+                                <input type="password" className="form-control" name="password" placeholder="Enter password" onChange={handleChange} onKeyUp={handleOnKeyUp}/>        
                             </label>
 
                             <div className='tac d-flex'>
                                 <label htmlFor="isActive" className='text'>I agree to terms and condition?
-                                    <input type="checkbox" className='checkBox' name="isActive" value={user.isActive} onChange={handleChange} onKeyUp={handleOnKeyUp}/>
+                                    <input type="checkbox" className='checkBox' name="isActive" onChange={handleChange} onKeyUp={handleOnKeyUp}/>
                                 </label>
                             </div>
 
@@ -168,3 +178,58 @@ function Registration() {
 
 
 export default Registration;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// if (response.data === "Fill all the required inputs.") {
+//     setIsSubmitting(false);
+//     setRegistrationErrMsg("Fill all the required inputs"); 
+//     // This optional callback function will be called when the fade-out is completed.
+//     $('.alert').fadeOut(1000, function() {
+//         console.log('Element faded out!');
+//     });
+//     return;             
+//     return;
+// } else if (response.data === "User with email exists. Please sign-in.") {
+//     setIsSubmitting(false);
+//     setRegistrationErrMsg(`Email: ${user.email.toLowerCase()} exists. Please log-in`);
+//     // This optional callback function will be called when the fade-out is completed.
+//     $('.alert').fadeOut(1000, function() {
+//         console.log('Element faded out!');
+//     });
+//     return;
+// } else if (response.data === "User with username exists. Please sign-in.") {
+//     setIsSubmitting(false);
+//     setRegistrationErrMsg(`Username: ${user.username.toLowerCase()} exists. Please log-in`);
+//     // This optional callback function will be called when the fade-out is completed.
+//     $('.alert').fadeOut(1000, function() {
+//         console.log('Element faded out!');
+//     });
+//     return;
+// } else {
+//     setIsSubmitting(true);            
+//     // const redirToLogin = "/user/login";
+//     // window.location.replace(redirToLogin);
+
+//     // setTimeout(() => {
+//     //     window.location.href = "http://127.0.0.1:3000/user/login";
+//     // }, 2500);
+//     return;
+// };
