@@ -1,6 +1,5 @@
 const db = require("../models");
 const User = db.users;
-// const RoleModel = db.roles;
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 
@@ -12,74 +11,79 @@ const jwt = require("jsonwebtoken");
 
 
 
+
 // Create New User
 exports.create = async (req, res) => {
-   
+
+    // Fields for Payload
+    const {id, username, firstName, lastName, email, password, isActive="true"?true:false} = req.body;
+    const emailExists = await User.findOne({ email: email.toLowerCase() });
+    const usernameExists = await User.findOne({ username: username.toLowerCase() });
+
+
     try {
-
-        const emailExists = await User.findOne({email: email.toLowerCase()});
-        const usernameExists = await User.findOne({username: username.toLowerCase()});
-
-        const {username, firstName, lastName, email, password, isActive} = req.body;
-
-        // FORM VALIDATION:  If any of these fields, is missing in the payload, display 'errMsg' !!!!
-        if (!(username && firstName && lastName && email && password && isActive)) {
-            const errMsg = res.status(200).send('Fill all the required inputs.');
-            console.log("Fill all the required inputs: ", errMsg);
-            return;
+        
+        // FORM VALIDATION:  "Required Fields for Payload."
+        if (!( username && firstName && lastName && email && password)) {
+            const responseData = { success: false, message: 'Fill all the required inputs.' };
+            return res.status(200).send(responseData);
         } else if (emailExists) {
-            const emailExistsMsg = res.status(200).send('User with email exists. Please sign-in.');
-            console.log("Email exists: ", emailExistsMsg);
-            return;
+            const responseData = { success: false, message: 'User with email exists. Please sign-in.' };
+            return res.status(200).send(responseData);
         } else if (usernameExists) {
-            const usernameExistsMsg = res.status(200).send('User with username exists. Please sign-in.');
-            console.log("Username exists: ", usernameExistsMsg);
-            return;
+            const responseData = { success: false, message: 'User with username exists. Please sign-in.' };
+            return res.status(200).send(responseData);
         } else {
             const encryptedPassword = await bcrypt.hashSync(password, bcrypt.genSaltSync());
-            // const id = Math.floor(255*Math.random());
             const user = new User ({
-                userName: username.toLowerCase(),
+                _id: id*Math.floor(21*Math.random()) + Math.floor(47*Math.random()) + Math.floor(98*Math.random()),
+                username: username.toLowerCase(),    // sanitize: convert username to lowercase
                 firstName,
                 lastName,
-                email: email.toLowerCase(),    // sanitize: convert email to lowercase
+                email: email.toLowerCase(),    // sanitize: convert email to lowercase NOTE: You must sanitize your data before forwarding to backend.
                 password: encryptedPassword,
                 isActive,
-            });          
-
+            });
+           
+            // [ MIDDLEWARE ] >>>  JSON Web Token (JWT)
+            // Here, "tokenKey" is defined as a constant variable to represent the "secret_key" used to sign the JSON Web Token(JWT). 
+            // >> It will first check if there is an environment variable named TOKEN_KEY. If such an environment variable exists, use it's value as the "tokenKey". 
+            // >> Otherwise, it falls back to the default string i.e "iMustWarnYou,DoNotPlayWithMe!-Gabby".
             const tokenKey = process.env.TOKEN_KEY || "iMustWarnYou,DoNotPlayWithMe!-Gabby";
-            const token = jwt.sign({userId: user.id, email}, tokenKey, { expiresIn: "2h" });
-            user.token = token;
+        
 
+            // NOTE: JSON Web Token(JWT) is using the sign method from the jsonwebtoken library.
+            // 1) The first argument is an object containing the payload of the token, which includes the user_Id (assuming it is the user's ID) and the email.
+            // 2) The second argument is the secret key (i.e tokenKey) used to sign the token, ensuring its authenticity.
+            // 3) The third argument is an options object, specifying that the token should expire after 24 hours.
+
+            // IN SUMMARY:
+            // > Create a JSON Web Token(JWT) for a user including their ID (i.e user.id) and email, in the "token's " payload,
+            // >> Sign it with a secret key (tokenKey), 
+            // >>> And set an expiration time of 24 hours ({ expiresIn: "24h" }). 
+            // ... The "token" variable will then contain the generated JWT, which can be used for authentication and authorization purposes in your application
+            const token = jwt.sign({user_Id: user._id, email}, tokenKey, { expiresIn: "24h" });
+
+
+            // Assign Generated Token to User
+            user.token = token;
             user.save();
+
             console.log(`\n*********************************************************
                          \n*****        USER ACCOUNT SUCCESSFULLY SAVED        ***** 
                          \n********************************************************* 
-                         \n ${user} 
-                         \n*********************************************************
+                         \n ${user}
                          \n*********************************************************`);
-            
-            return res.status(201).json(user);          
+
+            const responseData = { success: true, data: user, message: 'SUCCESSFUL: NEW USER ACCOUNT CREATED !!!' };
+            return res.status(201).json(responseData);
         }
-    } catch (err) {      
-        const errMsg = res.status(500).json(`Internal Server Error: ${err}`);
-        console.log("Error saving user: ", errMsg);
-        return;
+
+    } catch (error) {      
+        return res.status(500).json({ message: "Internal Server Error", error: error.message });
     }
-
-
-    // // IF NOT USING TRY & CATCH BLOCK, THIS METHOD WILL DO!!!
-    // // Save the user to the database
-    // user.save()
-    // .then(result => {
-    //     console.log('User saved:', result);
-    //     res.status(201).json(result);
-    // })
-    // .catch(error => {
-    //     console.error('Error saving user:', error);
-    //     res.status(500).json({ error: 'Internal Server Error' });
-    // });
 };
+
 
 
 
@@ -89,37 +93,35 @@ exports.create = async (req, res) => {
 // Our login logic starts here
 exports.logIn = async (req, res) => {
 
-    // res.setHeader('Content-Type', 'application/json');
-    
+    // Fields for Payload
+    const { username, password } = req.body;
+    const user = await User.findOne({ username });
+              
     try {
-        const { email, password } = req.body;
-  
-        // Find the user by email
-        const user = await User.findOne({ email });
-                
         // Check if the user exists and the password is correct
         if (user && await bcrypt.compare(password, user.password)) {
             
-            // Generate a token
-            const token = jwt.sign({ userId: user.id, email}, process.env.TOKEN_KEY, { expiresIn: "2h" });            
+            // Generate Token for User during Log-in
+            const tokenKey = process.env.TOKEN_KEY || "iMustWarnYou,DoNotPlayWithMe!-Gabby";
+
+            // Assign Generated Token to Existing User Account
+            const token = jwt.sign({ user_Id: user._id, username}, tokenKey, { expiresIn: "24h" });            
             
             // Send the token and user information in the response
             res.status(200).json({ user, token });
 
-            console.log("\n", "***** USER THAT IS LOGGED-IN *****", '\n', "User ID: ", user.id, '\n', "USERNAME: ", user.username, '\n', "FULL NAME: ", user.firstName + " " + user.lastName, "\n", "USER EMAIL: ", user.email,"\n", "USER ROLES: ", user.roles,"\n", "TOKEN GENERATED FOR USER: ", token);
-            // console.log("\n", "***** USER THAT IS LOGGED-IN *****", '\n', "USERNAME: ", user.username, '\n', "FULL NAME: ", user.first_name + " " + user.last_name, "\n", "USER EMAIL: ", user.email,"\n", "USER TOKEN: ", user.token, "\n\n", "TOKEN GENERATED FOR USER: ", token);
-            // console.log("TOKEN GENERATED: ", token);
+            // res.status(200).json({ user, token });
+            console.log("***** USER THAT IS LOGGED-IN *****", "\nUser ID: ", user._id, "\nUSERNAME: ", user.username, "\nFULL NAME: ", user.firstName + " " + user.lastName, "\nUSER EMAIL: ", user.email, "\nUSER's TOKEN: ", user.token, "\n\nJWT TOKEN GENERATED FOR USER: ", token);
 
         } else {
             // Authentication failed
-            const errMsg = res.status(401).send('No match found');
-            console.log("\n*********************************************************************************");
-            console.log("This User has enter'd incorrect Log-in details: ", errMsg);
-            
+            const responseData = { success: false, message: "No match found" }
+            return res.status(401).json(responseData);
         }
     } catch (error) {
         // Handle other errors
-        res.status(500).json({ error: error.message });
+        const responseData = { success: false, message: "Internal Server Error", error: error.message };
+        return res.status(500).json(responseData);
     }
 };
 
@@ -154,7 +156,7 @@ exports.findUserById = async (req, res) => {
     try{
         //  The response body(i.e userId) will contain the user document.
         //  NOTE:  This is a query operation:- User.findById();
-        const userId = User.findById(id)
+        const userId = await User.findById(id)
         if (userId) {
             return res.status(200).json(userId);
         } else {

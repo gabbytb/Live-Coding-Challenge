@@ -60,7 +60,7 @@ function Registration() {
     function handleSubmit(e) {
         e.preventDefault();
 
-        axios.post("http://127.0.0.1:8000/api/v1/admin/users/manage/creat", user)
+        axios.post("http://127.0.0.1:8000/api/v1/admin/users/manage/create", user)
         .then(response => {
             const { success, data, message } = response.data;
             if (!success && message === "Fill all the required inputs.") {

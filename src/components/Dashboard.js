@@ -52,9 +52,11 @@ import FormsPage from "../assets/dashboard/formsPg/FormsPage";
 
 const Dashboard = () => {    
 
-    console.clear();
-               
+    console.clear();               
+
     const loggedInUser = JSON.parse(localStorage.getItem("user"));
+    // const testAutoLogOutUser = loggedInUser.userName === "igabriel.oyebanji@travelbeta.com" ? handleLogout() : loggedInUser;
+    // console.log("AUTO-LOG-OUT: ", testAutoLogOutUser);
     const userName = loggedInUser ? loggedInUser.userName : handleLogout();
     const userFirstName = loggedInUser ? loggedInUser.firstName : handleLogout();
     const userLastName = loggedInUser ? loggedInUser.lastName : handleLogout();
@@ -84,24 +86,12 @@ const Dashboard = () => {
         window.location.replace(redirToLogin);
     }
 
-    
-
-
-
     useEffect(() => {
         document.title = "Admin Dashboard | Oyebanji Gabriel";        
     }, []);
-    
-
-
-
 
     // KEEP TRACK: Of Active section
     const [activeSection, setActiveSection] = useState("home");
-
-
-
-
 
     return (
         <>

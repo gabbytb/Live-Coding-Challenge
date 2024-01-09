@@ -9,11 +9,15 @@ import Header from '../Header';
 
 const LoginUser = () => {
 
-    const [user, setUser] = useState({ username: '', password: '' });
     // const [username, setUsername] = useState('');
     // const [password, setPassword] = useState('');
+    const [user, setUser] = useState({ username: '', password: '' });
     const [loginErrMsg, setLoginErrMsg] = useState(null);
    
+    function handleOnKeyUp(e) {
+        console.clear();
+        console.log(`COLLECTING USER DETAILS.....\nUsername: ${user.username} \nPassword: ${user.password}`);
+    }
 
     function handleChange(e) {
         const name = e.target.name;
@@ -23,10 +27,22 @@ const LoginUser = () => {
         })
     }
 
-    function handleOnKeyUp(e) {
-        console.clear();
-        console.log(`COLLECTING USER DETAILS.....\nUsername: ${user.username} \nPassword: ${user.password}`);
-    }
+    // const handleLogin = async () => {
+    //     axios.post("http://127.0.0.1:8000/api/v1/auth/login", user)
+    //     .then(response => {
+    //         const { user, token } = response.data;
+    //         if (!(token)) {
+    //             setLoginErrMsg("No match found");
+    //             return;                    
+    //         } else {
+    //             localStorage.setItem("user", JSON.stringify(user));
+    //             // window.location.replace("http://127.0.0.1:3000/admin/dashboard");        // Goto Admin Dashboard after Logging in
+    //         }
+    //     })
+    //     .catch(error => {
+    //         console.log("Cannot Login. Please check your Internet connection: ", error);
+    //     });
+    // };
 
     const handleLogin = async () => {
         axios.post("https://api.travelbeta.com/api/v1/auth/login", user)
@@ -50,14 +66,6 @@ const LoginUser = () => {
             console.log("Cannot Login. Please check your Internet connection: ", error);
         });
     };
-
-      
-
-
-    // function handleOnKeyUp(e) {
-    //     console.clear();
-    //     console.log(`COLLECTING USER DETAILS.....\nUsername: ${username} \nPassword: ${password}`);
-    // }
 
     // const handleLogin = async () => {
     //     axios.post("https://api.travelbeta.com/api/v1/auth/login", 
